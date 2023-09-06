@@ -1,0 +1,22 @@
+{
+    "name": "VRCFuckery",
+    "references": [
+        "VRCFury",
+        "VRCFury-Editor"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [
+        {
+            "name": "com.vrcfury.vrcfury",
+            "expression": "",
+            "define": "USE_VRCFURY"
+        }
+    ],
+    "noEngineReferences": false
+}
