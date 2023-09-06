@@ -4,6 +4,8 @@ This tools aims to create an avatar ready for encryption with KannaProtecc, for 
 This tool uses the Harmony library to hook into Unity's API and redirect all calls to AddObjectToAsset to create new assets instead of sub-assets, which are not really compatible with KannaProtecc.
 It also renames these assets to prevent conflicts between assets with the same name in different controllers, and renames controllers to their layer name, and some other stuff I think.
 
+This tool was made because I don't have the time nor the energy to maintain a fork or make a PR of VRCFury.
+
 But you're probably not here to hear me rumble nonsense garbage so let's start !
 
 # How to use
