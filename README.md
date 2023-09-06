@@ -12,7 +12,7 @@ But you're probably not here to hear me rumble nonsense garbage so let's start !
 
 1. [Ensure VRCFury is installed as a package.](https://vrcfury.com/download) Not sure if it will be detected otherwise.
 2. [Ensure KannaProtecc is installed as well.](https://github.com/PlagueVRC/AntiRip) That's... the whole point of it all !
-3. Download this repository and extract it into your Assets folder.
+3. [Download this repository](https://github.com/Dathuss/VRCFPatcher/archive/refs/heads/main.zip) and extract it into your Assets folder.
 4. Select your avatar in your scene and [setup KannaProtecc on it](https://github.com/PlagueVRC/AntiRip#setup-kanna-protecc-component). You'll have to manually add the layers you don't want to be obfuscated (they might be automatically added in the future). If using a locomotion controller like GoGoLoco, at least add 'Base' and 'Sitting'.
 5. Go to Tools -> VRCFury -> Build avatar for KannaProtecc and wait until it finishes building
 
