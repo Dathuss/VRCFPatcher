@@ -20,6 +20,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 using Object = UnityEngine.Object;
+using Random = UnityEngine.Random;
 
 // This class aims to hook to AssetDatabase.AddObjectToAsset to prevent VRCFury from making sub-assets
 // which disrupts the way KannaProtecc works. Extracting the assets on KannaProtecc's side could
@@ -32,6 +33,7 @@ using Object = UnityEngine.Object;
 internal static class VrcfPatcher
 {
     private const string _patchName = "vrcfpatcher";
+    private const string menuPrefix = "Tools/VRCFury/KannaProtecc/";
     private static readonly Harmony _harmony = new Harmony(_patchName);
 
 #if UNITY_EDITOR && USE_VRCFURY
@@ -74,11 +76,11 @@ internal static class VrcfPatcher
 
         return true;
     }
+    
+    [MenuItem(menuPrefix + "Build avatar", validate = true)]
+    private static bool CheckAvatarBuild() => MenuUtils.GetSelectedAvatar() != null;
 
-    [MenuItem("Tools/VRCFury/Build avatar for KannaProtecc", validate = true)]
-    private static bool CheckAvatarBuild() => VRCFuryTestCopyMenuItem.CheckBuildTestCopy();
-
-    [MenuItem("Tools/VRCFury/Build avatar for KannaProtecc", priority = MenuItems.testCopyPriority - 1)]
+    [MenuItem(menuPrefix + "Build avatar")]
     private static void StartAvatarBuild()
     {
         GameObject originalObject;
@@ -122,8 +124,7 @@ internal static class VrcfPatcher
                 {
                     var layerType = cloneLayers
                         .Where(l => l.animatorController == AssetDatabase.LoadAssetAtPath<AnimatorController>(path))
-                        .Select(l => l.type)
-                        .First();
+                        .First().type;
 
                     AssetDatabase.MoveAsset(path, $"{sourcePath}/{layerType}_layer.controller");
                 }
@@ -153,6 +154,84 @@ internal static class VrcfPatcher
         }
     }
     
+    [MenuItem(menuPrefix + "Fix Missing Parameters", validate = true)]
+    private static bool CheckFixMissingParameters()
+    {
+        if (MenuUtils.GetSelectedAvatar() != null)
+        {
+            var obj = Selection.activeGameObject;
+            return obj.name.StartsWith("VRCF clone (") && obj.name.EndsWith(")_KannaProteccted");
+        }
+        return false;
+    }
+    
+    [MenuItem(menuPrefix + "Fix Missing Parameters")]
+    private static void FixMissingParameters()
+    {
+        var avatar = MenuUtils.GetSelectedAvatar().GetComponent<VRCAvatarDescriptor>();
+        var originalAvatarName = avatar.name.Remove(avatar.name.IndexOf("_KannaProteccted"));
+        var originalAvatar = Resources.FindObjectsOfTypeAll<VRCAvatarDescriptor>().Where(o => o.gameObject.name == originalAvatarName).First();
+
+        var parameters = avatar.expressionParameters.parameters.ToList();
+
+        void RecursiveCheckMenuParams(VRCExpressionsMenu currentMenu, VRCExpressionsMenu originalMenu)
+        {
+            for (int i = 0; i < currentMenu.controls.Count; i++)
+            {
+                var control = currentMenu.controls[i];
+
+                if (control.parameter != null 
+                    && !string.IsNullOrEmpty(control.parameter.name)
+                    && !avatar.expressionParameters.parameters.Any(p => p.name == control.parameter.name))
+                {
+                    var originalParameter = originalAvatar.expressionParameters.parameters.Where(p => p.name == originalMenu.controls[i].parameter.name).First();
+
+                    var newParam = new VRCExpressionParameters.Parameter()
+                    {
+                        name = control.parameter.name,
+                        valueType = originalParameter.valueType,
+                        saved = originalParameter.saved,
+                        defaultValue = originalParameter.defaultValue,
+                        networkSynced = originalParameter.networkSynced
+                    };
+                    Debug.Log($"Adding '{newParam.name}' to the expression parameters");
+                    parameters.Insert(Random.Range(0, parameters.Count), newParam);
+                }
+
+                for (int j = 0; j < control.subParameters.Length; j++)
+                {
+                    var subParam = control.subParameters[j];
+                    if (subParam != null
+                        && !string.IsNullOrEmpty(subParam.name)
+                        && !avatar.expressionParameters.parameters.Any(p => p.name == subParam.name))
+                    {
+                        var originalParameter = originalAvatar.expressionParameters.parameters.Where(p => p.name == originalMenu.controls[i].subParameters[j].name).First();
+
+                        var newParam = new VRCExpressionParameters.Parameter()
+                        {
+                            name = control.subParameters[j].name,
+                            valueType = originalParameter.valueType,
+                            saved = originalParameter.saved,
+                            defaultValue = originalParameter.defaultValue,
+                            networkSynced = originalParameter.networkSynced
+                        };
+                        Debug.Log($"Adding '{newParam.name}' to the expression parameters");
+                        parameters.Insert(Random.Range(0, parameters.Count), newParam);
+                    }
+                }
+
+                if (control.type == VRCExpressionsMenu.Control.ControlType.SubMenu && control.subMenu != null)
+                {
+                    RecursiveCheckMenuParams(control.subMenu, originalMenu.controls[i].subMenu);
+                }
+            }
+        }
+
+        RecursiveCheckMenuParams(avatar.expressionsMenu, originalAvatar.expressionsMenu);
+        avatar.expressionParameters.parameters = parameters.ToArray();
+        AssetDatabase.SaveAssets();
+    }
+
 #else
     static VrcfPatcher()
     {
