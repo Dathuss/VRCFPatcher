@@ -151,6 +151,7 @@ internal static class VrcfPatcher
         finally
         {
             AssetDatabase.SaveAssets();
+            originalObject.SetActive(false);
         }
     }
     
