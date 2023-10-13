@@ -12,7 +12,7 @@ But you're probably not here to hear me rumble nonsense garbage so let's start !
 
 Make sure to read <b>EVERYTHING</b> before asking for help !
 
-1. [Ensure VRCFury is installed as a package.](https://vrcfury.com/download) Not sure if it will be detected otherwise.
+1. [Ensure VRCFury is installed through VCC](https://vrcfury.com/download). Not sure if it will be detected otherwise.
 2. [Ensure KannaProtecc is installed as well.](https://github.com/PlagueVRC/AntiRip) That's... the whole point of it after all !
 3. [Download this repository](https://github.com/Dathuss/VRCFPatcher/archive/refs/heads/main.zip) and extract it into your Assets folder.
 4. Select your avatar in your scene and [setup KannaProtecc on it](https://github.com/PlagueVRC/AntiRip#setup-kanna-protecc-component) (<b>do not encrypt yet ! just set it up.</b>).
@@ -25,7 +25,11 @@ Make sure to read <b>EVERYTHING</b> before asking for help !
 ![1](https://github.com/Dathuss/VRCFPatcher/assets/34245959/1d541c29-ed7c-4147-b261-066f1cc4c06d)
 
 7. A new object will be created called 'VRCF clone'. You can [Protecc it](https://github.com/PlagueVRC/AntiRip#encrypting-and-uploading) now !
-8. <b>IMPORTANT</b>: Under certain circumstances, some parameters will not be copied to the expression parameters, so if you get any errors like these :
+
+## How To Fix Certain Issues That May Come Up
+
+### Parameters disappearing in the proteccted avatar
+Under certain circumstances, some parameters will not be copied to the expression parameters, so if you get any errors like these :
 
 ![3](https://github.com/Dathuss/VRCFPatcher/assets/34245959/3792ba09-b795-4cfa-9c8e-32bc0706b014)
 ![2](https://github.com/Dathuss/VRCFPatcher/assets/34245959/23ba2313-bd61-468b-bcee-1ae997a0ff81)
@@ -34,3 +38,10 @@ Select your Proteccted avatar, then go to <i>Tools -> VRCFury -> KannaProtecc ->
 
 ![4](https://github.com/Dathuss/VRCFPatcher/assets/34245959/a8fdf33e-8e50-4392-aa15-c53169c48492)
 
+### Menus not showing up
+
+If the menus don't show up and you get an error similar to this :
+
+![image](https://github.com/Dathuss/VRCFPatcher/assets/34245959/ac95d69a-bf37-4b79-a98d-e7be9c167102)
+
+It means another project already uses Harmony. In other words, simply delete `0Harmony.dll` and `0Harmony.xml` in the VRCFPatcher folder and the issue should be gone.
