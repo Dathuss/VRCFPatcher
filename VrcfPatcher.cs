@@ -83,9 +83,12 @@ internal static class VrcfPatcher
 
     private static GameObject GetSelectedAvatarGameObject()
     {
-        var avatar = GetSelectedAvatar();
+        var VFavatar = GetSelectedAvatar();
+        var avatar = VFavatar.GetType().GetField("_gameObject", AccessTools.all).GetValue(VFavatar) as GameObject;
+
+        Debug.Log($"Found selected avatar GameObject: {avatar?.name ?? "Null"}");
         
-        return avatar.GetType().GetField("gameObject", AccessTools.all).GetValue(avatar) as GameObject;
+        return avatar;
     }
     
     private static object GetSelectedAvatar()
@@ -121,7 +124,7 @@ internal static class VrcfPatcher
             _isBuilding = true;
             originalObjectVF = GetSelectedAvatar();
             originalObject = GetSelectedAvatarGameObject();
-            Assembly.GetAssembly(typeof(Editor)).GetTypes().First(o => o.Namespace == "VF.Menu" && o.Name == "VRCFuryTestCopyMenuItem").GetMethod("BuildTestCopy", AccessTools.all).Invoke(null, new []{ originalObject });
+            AppDomain.CurrentDomain.GetAssemblies().First(o => o.GetName().Name == "VRCFury-Editor").GetTypes().First(o => o.Namespace == "VF.Menu" && o.Name == "VRCFuryTestCopyMenuItem").GetMethod("BuildTestCopy", AccessTools.all).Invoke(null, new []{ originalObjectVF });
         }
         catch (Exception e)
         {
@@ -137,7 +140,7 @@ internal static class VrcfPatcher
             var clone = GameObject.Find("VRCF Test Copy for " + originalObject.name);
             if (clone == null) return;
 
-            if (clone.GetComponents<Component>().FirstOrDefault(o => o.GetType().GetUnderlyingType().Name == "VRCFuryTest") is var test && test != null)
+            if (clone.GetComponents<Component>().FirstOrDefault(o => o.GetType().Name == "VRCFuryTest") is var test && test != null)
             {
                 Object.DestroyImmediate(test);
             }
@@ -148,8 +151,10 @@ internal static class VrcfPatcher
                 cloneLayers = cloneDescriptor.baseAnimationLayers.Concat(cloneDescriptor.specialAnimationLayers).ToArray();
             }
 
-            var sourcePath = $"Packages/com.vrcfury.temp/" + clone.name;
-            sourcePath = AssetDatabase.GetSubFolders(sourcePath)[0];
+            AssetDatabase.Refresh();
+            
+            var sourcePath = $"Packages\\com.vrcfury.temp\\" + originalObject.name + "_Clone_";
+            sourcePath = AssetDatabase.GetSubFolders(sourcePath).First();
 
             foreach (var guid in AssetDatabase.FindAssets("VRCFury *", new string[] { sourcePath }))
             {
