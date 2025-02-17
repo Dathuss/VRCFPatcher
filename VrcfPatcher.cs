@@ -61,22 +61,22 @@ internal static class VrcfPatcher
     };
 
     private static bool _isBuilding = false;
-	private static string _targetFolderPath = null;
+    private static string _targetFolderPath = null;
 
     public static bool AssetDBPrefix(Object objectToAdd, Object assetObject)
     {
         if (_isBuilding && _typePrefixExtensionKV.ContainsKey(objectToAdd.GetType()))
         {
             var folderPath = Path.GetDirectoryName(AssetDatabase.GetAssetPath(assetObject));
-			if (_targetFolderPath == null)
-				_targetFolderPath = folderPath;
+            if (_targetFolderPath == null)
+                _targetFolderPath = folderPath;
             (var prefix, var extension) = _typePrefixExtensionKV[objectToAdd.GetType()];
 
             // We don't keep the original asset names because sometimes they contain characters that cannot be
             // contained in a file name. Instead we give them a simple name with an automatically assigned index
             var filePath = AssetDatabase.GenerateUniqueAssetPath($"{folderPath}/{prefix}_0.{extension}");
             AssetDatabase.CreateAsset(objectToAdd, filePath);
-			objectToAdd.MarkDirty();
+            objectToAdd.MarkDirty();
 
             return false;
         }
@@ -128,7 +128,7 @@ internal static class VrcfPatcher
         try
         {
             _isBuilding = true;
-			_targetFolderPath = null; 
+            _targetFolderPath = null; 
             originalObjectVF = GetSelectedAvatar();
             originalObject = GetSelectedAvatarGameObject();
             AppDomain.CurrentDomain.GetAssemblies().First(o => o.GetName().Name == "VRCFury-Editor").GetTypes().First(o => o.Namespace == "VF.Menu" && o.Name == "VRCFuryTestCopyMenuItem").GetMethod("BuildTestCopy", AccessTools.all).Invoke(null, new []{ originalObjectVF });
@@ -138,7 +138,7 @@ internal static class VrcfPatcher
             Debug.LogError("An exception occured when building avatar. This shouldn't happen but oh well. Exception :");
             Debug.LogException(e);
             _isBuilding = false;
-			_targetFolderPath = null;
+            _targetFolderPath = null;
             return;
         }
         _isBuilding = false;
@@ -155,14 +155,14 @@ internal static class VrcfPatcher
 
             VRCAvatarDescriptor.CustomAnimLayer[] cloneLayers;
             var cloneDescriptor = clone.GetComponent<VRCAvatarDescriptor>();
-			cloneLayers = cloneDescriptor.baseAnimationLayers.Concat(cloneDescriptor.specialAnimationLayers).ToArray();
+            cloneLayers = cloneDescriptor.baseAnimationLayers.Concat(cloneDescriptor.specialAnimationLayers).ToArray();
 
             AssetDatabase.Refresh();
 
-			string sourcePath = _targetFolderPath;
-			if (sourcePath == null)
-				throw new Exception("_targetFolderPath is null");
-			Debug.Log("Temp folder path is " + sourcePath);
+            string sourcePath = _targetFolderPath;
+            if (sourcePath == null)
+                throw new Exception("_targetFolderPath is null");
+            Debug.Log("Temp folder path is " + sourcePath);
 
             foreach (var guid in AssetDatabase.FindAssets("VRCFury *", new string[] { sourcePath }))
             {
@@ -183,15 +183,15 @@ internal static class VrcfPatcher
                 }
                 else if (fileName.StartsWith("VRCFury Menu"))
                 {
-					// We have to make a clone of the top menu because its submenu assets won't survive
-					// a reload (don't ask why)
-					var menu = AssetDatabase.LoadAssetAtPath<VRCExpressionsMenu>(path);
-					var menuClone = new VRCExpressionsMenu();
-					menuClone.controls = menu.controls.ToList();
-					AssetDatabase.DeleteAsset(path);
-					menuClone.MarkDirty();
-					AssetDatabase.CreateAsset(menuClone, $"{sourcePath}/main_menu.asset");
-					cloneDescriptor.expressionsMenu = menuClone;
+                    // We have to make a clone of the top menu because its submenu assets won't survive
+                    // a reload (don't ask why)
+                    var menu = AssetDatabase.LoadAssetAtPath<VRCExpressionsMenu>(path);
+                    var menuClone = new VRCExpressionsMenu();
+                    menuClone.controls = menu.controls.ToList();
+                    AssetDatabase.DeleteAsset(path);
+                    menuClone.MarkDirty();
+                    AssetDatabase.CreateAsset(menuClone, $"{sourcePath}/main_menu.asset");
+                    cloneDescriptor.expressionsMenu = menuClone;
                 }
             }
 
