@@ -153,8 +153,18 @@ internal static class VrcfPatcher
 
             AssetDatabase.Refresh();
             
-            var sourcePath = $"Packages\\com.vrcfury.temp\\" + originalObject.name + "_Clone_";
-            sourcePath = AssetDatabase.GetSubFolders(sourcePath).First();
+			var subFolders = AssetDatabase.GetSubFolders(
+				$"Packages\\com.vrcfury.temp\\{originalObject.name}_Clone_"
+			);
+			string sourcePath;
+			if (subFolders.Length == 0)
+			{
+				// idek i think its different for some versions ? but i think they reverted it also
+				// uhh just in case ill keep it
+				sourcePath = $"Packages\\com.vrcfury.temp\\Builds\\{originalObject.name}";
+			}
+			else
+				sourcePath = subFolders[0];
 
             foreach (var guid in AssetDatabase.FindAssets("VRCFury *", new string[] { sourcePath }))
             {
