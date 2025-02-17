@@ -154,10 +154,8 @@ internal static class VrcfPatcher
             }
 
             VRCAvatarDescriptor.CustomAnimLayer[] cloneLayers;
-            {
-                var cloneDescriptor = clone.GetComponent<VRCAvatarDescriptor>();
-                cloneLayers = cloneDescriptor.baseAnimationLayers.Concat(cloneDescriptor.specialAnimationLayers).ToArray();
-            }
+            var cloneDescriptor = clone.GetComponent<VRCAvatarDescriptor>();
+			cloneLayers = cloneDescriptor.baseAnimationLayers.Concat(cloneDescriptor.specialAnimationLayers).ToArray();
 
             AssetDatabase.Refresh();
 
@@ -185,7 +183,15 @@ internal static class VrcfPatcher
                 }
                 else if (fileName.StartsWith("VRCFury Menu"))
                 {
-                    AssetDatabase.MoveAsset(path, $"{sourcePath}/main_menu.asset");
+					// We have to make a clone of the top menu because its submenu assets won't survive
+					// a reload (don't ask why)
+					var menu = AssetDatabase.LoadAssetAtPath<VRCExpressionsMenu>(path);
+					var menuClone = new VRCExpressionsMenu();
+					menuClone.controls = menu.controls.ToList();
+					AssetDatabase.DeleteAsset(path);
+					menuClone.MarkDirty();
+					AssetDatabase.CreateAsset(menuClone, $"{sourcePath}/main_menu.asset");
+					cloneDescriptor.expressionsMenu = menuClone;
                 }
             }
 
