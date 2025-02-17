@@ -60,12 +60,15 @@ internal static class VrcfPatcher
     };
 
     private static bool _isBuilding = false;
+	private static string _targetFolderPath = null;
 
     public static bool AssetDBPrefix(Object objectToAdd, Object assetObject)
     {
         if (_isBuilding && _typePrefixExtensionKV.ContainsKey(objectToAdd.GetType()))
         {
             var folderPath = Path.GetDirectoryName(AssetDatabase.GetAssetPath(assetObject));
+			if (_targetFolderPath == null)
+				_targetFolderPath = folderPath;
             (var prefix, var extension) = _typePrefixExtensionKV[objectToAdd.GetType()];
 
             // We don't keep the original asset names because sometimes they contain characters that cannot be
@@ -122,6 +125,7 @@ internal static class VrcfPatcher
         try
         {
             _isBuilding = true;
+			_targetFolderPath = null; 
             originalObjectVF = GetSelectedAvatar();
             originalObject = GetSelectedAvatarGameObject();
             AppDomain.CurrentDomain.GetAssemblies().First(o => o.GetName().Name == "VRCFury-Editor").GetTypes().First(o => o.Namespace == "VF.Menu" && o.Name == "VRCFuryTestCopyMenuItem").GetMethod("BuildTestCopy", AccessTools.all).Invoke(null, new []{ originalObjectVF });
@@ -131,6 +135,7 @@ internal static class VrcfPatcher
             Debug.LogError("An exception occured when building avatar. This shouldn't happen but oh well. Exception :");
             Debug.LogException(e);
             _isBuilding = false;
+			_targetFolderPath = null;
             return;
         }
         _isBuilding = false;
@@ -152,19 +157,11 @@ internal static class VrcfPatcher
             }
 
             AssetDatabase.Refresh();
-            
-			var subFolders = AssetDatabase.GetSubFolders(
-				$"Packages\\com.vrcfury.temp\\{originalObject.name}_Clone_"
-			);
-			string sourcePath;
-			if (subFolders.Length == 0)
-			{
-				// idek i think its different for some versions ? but i think they reverted it also
-				// uhh just in case ill keep it
-				sourcePath = $"Packages\\com.vrcfury.temp\\Builds\\{originalObject.name}";
-			}
-			else
-				sourcePath = subFolders[0];
+
+			string sourcePath = _targetFolderPath;
+			if (sourcePath == null)
+				throw new Exception("_targetFolderPath is null");
+			Debug.Log("Temp folder path is " + sourcePath);
 
             foreach (var guid in AssetDatabase.FindAssets("VRCFury *", new string[] { sourcePath }))
             {
