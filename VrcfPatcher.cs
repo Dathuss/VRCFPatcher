@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using VRC;
 using VRC.SDK3.Avatars.Components;
 using VRC.SDK3.Avatars.ScriptableObjects;
 
@@ -75,6 +76,8 @@ internal static class VrcfPatcher
             // contained in a file name. Instead we give them a simple name with an automatically assigned index
             var filePath = AssetDatabase.GenerateUniqueAssetPath($"{folderPath}/{prefix}_0.{extension}");
             AssetDatabase.CreateAsset(objectToAdd, filePath);
+			objectToAdd.MarkDirty();
+
             return false;
         }
 
