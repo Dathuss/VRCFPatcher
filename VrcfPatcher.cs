@@ -154,19 +154,15 @@ internal static class VrcfPatcher
             throw new Exception("_targetFolderPath is null");
         Debug.Log("Temp folder path is " + sourcePath);
 
-        foreach (var guid in AssetDatabase.FindAssets("VRCFury *", new string[] { sourcePath }))
+        foreach (var guid in AssetDatabase.FindAssets($"t:AnimatorController", new string[] { sourcePath }))
         {
             var path = AssetDatabase.GUIDToAssetPath(guid);
-            var fileName = Path.GetFileName(path);
 
-            if (fileName.EndsWith(".controller"))
-            {
-                var layerType = cloneLayers
-                    .Where(l => l.animatorController == AssetDatabase.LoadAssetAtPath<AnimatorController>(path))
-                    .First().type;
+            var layerType = cloneLayers
+                .First(l => l.animatorController == AssetDatabase.LoadAssetAtPath<AnimatorController>(path))
+                .type;
 
-                AssetDatabase.MoveAsset(path, $"{sourcePath}/{layerType}_layer.controller");
-            }
+            AssetDatabase.MoveAsset(path, $"{sourcePath}/{layerType}_layer.controller");
         }
 
         var exprParamPath = AssetDatabase.GetAssetPath(cloneDescriptor.expressionParameters);
