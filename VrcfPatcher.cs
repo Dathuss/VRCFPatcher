@@ -63,6 +63,8 @@ internal static class VrcfPatcher
     private static bool _isBuilding = false;
     private static string _targetFolderPath = null;
 
+    private static Dictionary<VRCExpressionsMenu, List<VRCExpressionsMenu.Control>> _submenuControlsKV = new();
+
     public static bool AssetDBPrefix(Object objectToAdd, Object assetObject)
     {
         if (_isBuilding && _typePrefixExtensionKV.ContainsKey(objectToAdd.GetType()))
@@ -71,6 +73,9 @@ internal static class VrcfPatcher
             if (_targetFolderPath == null)
                 _targetFolderPath = folderPath;
             (var prefix, var extension) = _typePrefixExtensionKV[objectToAdd.GetType()];
+
+            if (objectToAdd is VRCExpressionsMenu menu)
+                _submenuControlsKV.Add(menu, menu.controls.ToList());
 
             // We don't keep the original asset names because sometimes they contain characters that cannot be
             // contained in a file name. Instead we give them a simple name with an automatically assigned index
@@ -128,7 +133,8 @@ internal static class VrcfPatcher
         try
         {
             _isBuilding = true;
-            _targetFolderPath = null; 
+            _targetFolderPath = null;
+            _submenuControlsKV.Clear();
             originalObjectVF = GetSelectedAvatar();
             originalObject = GetSelectedAvatarGameObject();
             AppDomain.CurrentDomain.GetAssemblies().First(o => o.GetName().Name == "VRCFury-Editor").GetTypes().First(o => o.Namespace == "VF.Menu" && o.Name == "VRCFuryTestCopyMenuItem").GetMethod("BuildTestCopy", AccessTools.all).Invoke(null, new []{ originalObjectVF });
@@ -145,59 +151,7 @@ internal static class VrcfPatcher
 
         try
         {
-            var clone = GameObject.Find("VRCF Test Copy for " + originalObject.name);
-            if (clone == null) return;
-
-            if (clone.GetComponents<Component>().FirstOrDefault(o => o.GetType().Name == "VRCFuryTest") is var test && test != null)
-            {
-                Object.DestroyImmediate(test);
-            }
-
-            VRCAvatarDescriptor.CustomAnimLayer[] cloneLayers;
-            var cloneDescriptor = clone.GetComponent<VRCAvatarDescriptor>();
-            cloneLayers = cloneDescriptor.baseAnimationLayers.Concat(cloneDescriptor.specialAnimationLayers).ToArray();
-
-            AssetDatabase.Refresh();
-
-            string sourcePath = _targetFolderPath;
-            if (sourcePath == null)
-                throw new Exception("_targetFolderPath is null");
-            Debug.Log("Temp folder path is " + sourcePath);
-
-            foreach (var guid in AssetDatabase.FindAssets("VRCFury *", new string[] { sourcePath }))
-            {
-                var path = AssetDatabase.GUIDToAssetPath(guid);
-                var fileName = Path.GetFileName(path);
-
-                if (fileName.EndsWith(".controller"))
-                {
-                    var layerType = cloneLayers
-                        .Where(l => l.animatorController == AssetDatabase.LoadAssetAtPath<AnimatorController>(path))
-                        .First().type;
-
-                    AssetDatabase.MoveAsset(path, $"{sourcePath}/{layerType}_layer.controller");
-                }
-                else if (fileName.StartsWith("VRCFury Params"))
-                {
-                    AssetDatabase.MoveAsset(path, $"{sourcePath}/parameters.asset");
-                }
-                else if (fileName.StartsWith("VRCFury Menu"))
-                {
-                    // We have to make a clone of the top menu because its submenu assets won't survive
-                    // a reload (don't ask why)
-                    var menu = AssetDatabase.LoadAssetAtPath<VRCExpressionsMenu>(path);
-                    var menuClone = new VRCExpressionsMenu();
-                    menuClone.controls = menu.controls.ToList();
-                    AssetDatabase.DeleteAsset(path);
-                    menuClone.MarkDirty();
-                    AssetDatabase.CreateAsset(menuClone, $"{sourcePath}/main_menu.asset");
-                    cloneDescriptor.expressionsMenu = menuClone;
-                }
-            }
-
-            clone.name = $"VRCF clone ({originalObject.name})";
-
-            Debug.Log("Avatar cloned and VRCFPatcher did its thing !");
+            PostProcessAvatar(originalObject.name);
         }
         catch (Exception e)
         {
@@ -210,6 +164,102 @@ internal static class VrcfPatcher
             AssetDatabase.SaveAssets();
             originalObject.SetActive(false);
         }
+    }
+
+    static void PostProcessAvatar(string originalObjectName)
+    {
+        var clone = GameObject.Find("VRCF Test Copy for " + originalObjectName);
+        if (clone == null) return;
+
+        if (clone.GetComponents<Component>().FirstOrDefault(o => o.GetType().Name == "VRCFuryTest") is var test && test != null)
+        {
+            Object.DestroyImmediate(test);
+        }
+
+        VRCAvatarDescriptor.CustomAnimLayer[] cloneLayers;
+        var cloneDescriptor = clone.GetComponent<VRCAvatarDescriptor>();
+        cloneLayers = cloneDescriptor.baseAnimationLayers.Concat(cloneDescriptor.specialAnimationLayers).ToArray();
+
+        AssetDatabase.Refresh();
+
+        string sourcePath = _targetFolderPath;
+        if (sourcePath == null)
+            throw new Exception("_targetFolderPath is null");
+        Debug.Log("Temp folder path is " + sourcePath);
+
+        foreach (var guid in AssetDatabase.FindAssets("VRCFury *", new string[] { sourcePath }))
+        {
+            var path = AssetDatabase.GUIDToAssetPath(guid);
+            var fileName = Path.GetFileName(path);
+
+            if (fileName.EndsWith(".controller"))
+            {
+                var layerType = cloneLayers
+                    .Where(l => l.animatorController == AssetDatabase.LoadAssetAtPath<AnimatorController>(path))
+                    .First().type;
+
+                AssetDatabase.MoveAsset(path, $"{sourcePath}/{layerType}_layer.controller");
+            }
+        }
+
+        var exprParamPath = AssetDatabase.GetAssetPath(cloneDescriptor.expressionParameters);
+        if (exprParamPath != null)
+            AssetDatabase.MoveAsset(exprParamPath, $"{sourcePath}/parameters.asset");
+        else
+            Debug.LogError("expressions parameters of avatar descriptor not in an asset file");
+
+        var exprMenuPath = AssetDatabase.GetAssetPath(cloneDescriptor.expressionsMenu);
+        if (exprMenuPath != null)
+        {
+            // We have to make a clone of the top menu because its submenu assets won't survive
+            // a reload (don't ask why)
+            var menu = AssetDatabase.LoadAssetAtPath<VRCExpressionsMenu>(exprMenuPath);
+            var menuClone = ScriptableObject.CreateInstance<VRCExpressionsMenu>();
+            menuClone.controls = menu.controls.ToList();
+            AssetDatabase.DeleteAsset(exprMenuPath);
+            AssetDatabase.CreateAsset(menuClone, $"{sourcePath}/main_menu.asset");
+            cloneDescriptor.expressionsMenu = menuClone;
+
+            // in addition the submenus sometimes get their own submenus set to null
+            // like i really don't know why, that's why we copy their control properties
+            // when their respective assets are created and give them back here
+            // and it does the trick
+            void RecursiveEmptySubmenuFix(VRCExpressionsMenu cur)
+            {
+                if (cur != menuClone && !_submenuControlsKV.ContainsKey(cur))
+                    Debug.LogWarning(cur.name + " not in expected menu list");
+                else
+                {
+                    Debug.Log($"Fixing menu {cur.name}");
+                    if (cur != menuClone)
+                    {
+                        var count = cur.controls.Count(c => c.type == VRCExpressionsMenu.Control.ControlType.SubMenu && c.subMenu);
+                        if (count > 0)
+                            Debug.Log($"Fixing was indeed needed for this menu as it had {count} links broken");
+                        cur.controls = _submenuControlsKV[cur];
+                    }
+                    foreach (var control in cur.controls)
+                    {
+                        if (control.type == VRCExpressionsMenu.Control.ControlType.SubMenu)
+                        {
+                            if (control.subMenu == null)
+                                Debug.LogWarning($"submenu {control.name} in {cur.name} is null");
+                            else
+                                RecursiveEmptySubmenuFix(control.subMenu);
+                        }
+                    }
+                }
+                cur.MarkDirty();
+            }
+            RecursiveEmptySubmenuFix(menuClone);
+        }
+        else
+            Debug.LogError("expressions menu of avatar descriptor not in an asset file");
+
+        AssetDatabase.Refresh();
+        clone.name = $"VRCF clone ({originalObjectName})";
+
+        Debug.Log("Avatar cloned and VRCFPatcher did its thing !");
     }
     
     [MenuItem(menuPrefix + "Fix Missing Parameters", validate = true)]
