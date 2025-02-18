@@ -85,45 +85,12 @@ internal static class VrcfPatcher
 
             return false;
         }
-
         return true;
     }
     
-    [MenuItem(menuPrefix + "Build avatar", validate = true)]
-    private static bool CheckAvatarBuild() => GetSelectedAvatar() != null;
-
-    private static GameObject GetSelectedAvatarGameObject()
-    {
-        var VFavatar = GetSelectedAvatar();
-        var avatar = VFavatar.GetType().GetField("_gameObject", AccessTools.all).GetValue(VFavatar) as GameObject;
-
-        Debug.Log($"Found selected avatar GameObject: {avatar?.name ?? "Null"}");
-        
-        return avatar;
-    }
     
-    private static object GetSelectedAvatar()
-    {
-        var getSelected = GetMenuUtils().GetMethod("GetSelectedAvatar", AccessTools.all);
-        
-        Debug.Log($"Found GetSelectedAvatar: {getSelected.Name}");
-        
-        var avatar = getSelected.Invoke(null, Array.Empty<object>());
-        
-        Debug.Log($"Found selected avatar: {avatar?.GetType()?.Name ?? "Null"}");
-        
-        return avatar;
-    }
-
-    private static Type GetMenuUtils()
-    {
-        var menuUtils = AppDomain.CurrentDomain.GetAssemblies().First(o => o.GetName().Name == "VRCFury-Editor").GetTypes().First(o => o.Namespace == "VF.Menu" && o.Name == "MenuUtils");
-        
-        Debug.Log($"Found MenuUtils: {menuUtils.Namespace}.{menuUtils.Name}");
-        
-        return menuUtils;
-    }
-    //private static bool CheckAvatarBuilds() => MenuUtils.GetSelectedAvatar() != null;
+    [MenuItem(menuPrefix + "Build avatar", validate = true)]
+    private static bool CheckAvatarBuild() => Util.GetSelectedAvatar() != null;
 
     [MenuItem(menuPrefix + "Build avatar")]
     private static void StartAvatarBuild()
@@ -135,8 +102,8 @@ internal static class VrcfPatcher
             _isBuilding = true;
             _targetFolderPath = null;
             _submenuControlsKV.Clear();
-            originalObjectVF = GetSelectedAvatar();
-            originalObject = GetSelectedAvatarGameObject();
+            originalObjectVF = Util.GetSelectedAvatar();
+            originalObject = Util.GetSelectedAvatarGameObject();
             AppDomain.CurrentDomain.GetAssemblies().First(o => o.GetName().Name == "VRCFury-Editor").GetTypes().First(o => o.Namespace == "VF.Menu" && o.Name == "VRCFuryTestCopyMenuItem").GetMethod("BuildTestCopy", AccessTools.all).Invoke(null, new []{ originalObjectVF });
         }
         catch (Exception e)
@@ -265,7 +232,7 @@ internal static class VrcfPatcher
     [MenuItem(menuPrefix + "Fix Missing Parameters", validate = true)]
     private static bool CheckFixMissingParameters()
     {
-        if (GetSelectedAvatar() != null)
+        if (Util.GetSelectedAvatar() != null)
         {
             var obj = Selection.activeGameObject;
             return obj.name.StartsWith("VRCF clone (") && obj.name.EndsWith(")_KannaProteccted");
@@ -276,7 +243,7 @@ internal static class VrcfPatcher
     [MenuItem(menuPrefix + "Fix Missing Parameters")]
     private static void FixMissingParameters()
     {
-        var avatar = GetSelectedAvatarGameObject().GetComponent<VRCAvatarDescriptor>();
+        var avatar = Util.GetSelectedAvatarGameObject().GetComponent<VRCAvatarDescriptor>();
         var originalAvatarName = avatar.name.Remove(avatar.name.IndexOf("_KannaProteccted"));
         var originalAvatar = Resources.FindObjectsOfTypeAll<VRCAvatarDescriptor>().Where(o => o.gameObject.name == originalAvatarName).First();
 
