@@ -18,7 +18,7 @@ internal static class Util
     public static object GetSelectedAvatar()
     {
         var menuUtils = AppDomain.CurrentDomain.GetAssemblies()
-            .First(o => o.GetName().Name == "VRCFury-Editor")
+            .First(o => o.GetName().Name == "VRCFury-Editor" || o.GetName().Name == "VRCFury-Editor-Avatars")
             .GetTypes()
             .First(o => o.Namespace == "VF.Menu" && o.Name == "MenuUtils");
         

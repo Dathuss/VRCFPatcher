@@ -2,7 +2,9 @@
     "name": "VRCFuckery",
     "references": [
         "VRCFury",
-        "VRCFury-Editor"
+        "VRCFury-Editor",
+        "VRCFury-Editor-Common",
+        "VRCFury-Editor-Avatars"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

@@ -104,7 +104,12 @@ internal static class VrcfPatcher
             _submenuControlsKV.Clear();
             originalObjectVF = Util.GetSelectedAvatar();
             originalObject = Util.GetSelectedAvatarGameObject();
-            AppDomain.CurrentDomain.GetAssemblies().First(o => o.GetName().Name == "VRCFury-Editor").GetTypes().First(o => o.Namespace == "VF.Menu" && o.Name == "VRCFuryTestCopyMenuItem").GetMethod("BuildTestCopy", AccessTools.all).Invoke(null, new []{ originalObjectVF });
+            AppDomain.CurrentDomain.GetAssemblies()
+                .First(o => o.GetName().Name == "VRCFury-Editor" || o.GetName().Name == "VRCFury-Editor-Avatars")
+                .GetTypes()
+                .First(o => o.Namespace == "VF.Menu" && o.Name == "VRCFuryTestCopyMenuItem")
+                .GetMethod("BuildTestCopy", AccessTools.all)
+                .Invoke(null, new []{ originalObjectVF });
         }
         catch (Exception e)
         {
