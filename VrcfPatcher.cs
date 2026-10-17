@@ -154,9 +154,7 @@ internal static class VrcfPatcher
             Object.DestroyImmediate(test);
         }
 
-        VRCAvatarDescriptor.CustomAnimLayer[] cloneLayers;
         var cloneDescriptor = clone.GetComponent<VRCAvatarDescriptor>();
-        cloneLayers = cloneDescriptor.baseAnimationLayers.Concat(cloneDescriptor.specialAnimationLayers).ToArray();
 
         AssetDatabase.Refresh();
 
@@ -165,21 +163,7 @@ internal static class VrcfPatcher
             throw new Exception("_targetFolderPath is null");
         Debug.Log("Temp folder path is " + sourcePath);
 
-        foreach (var guid in AssetDatabase.FindAssets($"t:AnimatorController", new string[] { sourcePath }))
-        {
-            var path = AssetDatabase.GUIDToAssetPath(guid);
-
-            var layerType = cloneLayers
-                .First(l => l.animatorController == AssetDatabase.LoadAssetAtPath<AnimatorController>(path))
-                .type;
-
-            AssetDatabase.MoveAsset(path, $"{sourcePath}/{layerType}_layer.controller");
-        }
-
-        var exprParamPath = AssetDatabase.GetAssetPath(cloneDescriptor.expressionParameters);
-        if (exprParamPath != null)
-            AssetDatabase.MoveAsset(exprParamPath, $"{sourcePath}/parameters.asset");
-        else
+        if (AssetDatabase.GetAssetPath(cloneDescriptor.expressionParameters) == null)
             Debug.LogError("expressions parameters of avatar descriptor not in an asset file");
 
         var exprMenuPath = AssetDatabase.GetAssetPath(cloneDescriptor.expressionsMenu);
@@ -191,7 +175,7 @@ internal static class VrcfPatcher
             var menuClone = ScriptableObject.CreateInstance<VRCExpressionsMenu>();
             menuClone.controls = menu.controls.ToList();
             AssetDatabase.DeleteAsset(exprMenuPath);
-            AssetDatabase.CreateAsset(menuClone, $"{sourcePath}/main_menu.asset");
+            AssetDatabase.CreateAsset(menuClone, $"{sourcePath}/fixed_menu.asset");
             cloneDescriptor.expressionsMenu = menuClone;
 
             // in addition the submenus sometimes get their own submenus set to null
