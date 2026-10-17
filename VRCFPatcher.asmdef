@@ -18,6 +18,11 @@
             "name": "com.vrcfury.vrcfury",
             "expression": "",
             "define": "USE_VRCFURY"
+        },
+        {
+            "name": "com.vrcfury.temp",
+            "expression": "",
+            "define": "HAS_TEMP_FOLDER"
         }
     ],
     "noEngineReferences": false

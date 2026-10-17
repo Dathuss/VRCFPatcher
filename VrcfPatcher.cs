@@ -7,10 +7,8 @@ using VRC.SDK3.Avatars.ScriptableObjects;
 using UnityEditor;
 using UnityEditor.Animations;
 
-#if USE_VRCFURY
-using System.Reflection;
-using VF.Menu;
-using VF.Model;
+#if USE_VRCFURY && !HAS_TEMP_FOLDER
+# error Could not find package com.vrcfury.temp !! Check that you installed VRCFury correctly. If you did everything you could, PLEASE FILL AN ISSUE.
 #endif
 
 #endif
@@ -36,6 +34,7 @@ internal static class VrcfPatcher
 {
     private const string _patchName = "vrcfpatcher";
     private const string menuPrefix = "Tools/VRCFury/KannaProtecc/";
+    private const string _vrcfTempFilePrefix = "Packages/com.vrcfury.temp";
     private static readonly Harmony _harmony = new Harmony(_patchName);
 
 #if UNITY_EDITOR && USE_VRCFURY
@@ -69,9 +68,16 @@ internal static class VrcfPatcher
     {
         if (_isBuilding && _typePrefixExtensionKV.ContainsKey(objectToAdd.GetType()))
         {
-            var folderPath = Path.GetDirectoryName(AssetDatabase.GetAssetPath(assetObject));
-            if (_targetFolderPath == null)
-                _targetFolderPath = folderPath;
+            var assetPath = AssetDatabase.GetAssetPath(assetObject);
+            if (assetPath.StartsWith(_vrcfTempFilePrefix))
+            {
+                _targetFolderPath ??= Path.GetDirectoryName(assetPath);
+            }
+            else
+            {
+                return true;
+            }
+
             (var prefix, var extension) = _typePrefixExtensionKV[objectToAdd.GetType()];
 
             if (objectToAdd is VRCExpressionsMenu menu)
@@ -79,7 +85,7 @@ internal static class VrcfPatcher
 
             // We don't keep the original asset names because sometimes they contain characters that cannot be
             // contained in a file name. Instead we give them a simple name with an automatically assigned index
-            var filePath = AssetDatabase.GenerateUniqueAssetPath($"{folderPath}/{prefix}_0.{extension}");
+            var filePath = AssetDatabase.GenerateUniqueAssetPath($"{_vrcfTempFilePrefix}/{prefix}_0.{extension}");
             AssetDatabase.CreateAsset(objectToAdd, filePath);
             objectToAdd.MarkDirty();
 
