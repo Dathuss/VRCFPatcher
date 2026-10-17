@@ -26,6 +26,12 @@ Make sure to read <b>EVERYTHING</b> before asking for help !
 
 7. A new object will be created called 'VRCF clone'. You can [Protecc it](https://github.com/PlagueVRC/AntiRip#encrypting-and-uploading) now !
 
+## About Modular Avatar and friends
+
+This tool does *not* support Modular Avatar, or any other non-destructive avatar build system. I am only fluent in VRCFury.
+
+If you use a second avatar build system, try baking it before running the patcher, but I don't guarantee it will work.
+
 ## How To Fix Certain Issues That May Come Up
 
 ### Parameters disappearing in the proteccted avatar
